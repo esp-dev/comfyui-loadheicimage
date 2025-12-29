@@ -23,3 +23,4 @@ The dropdown lists images from ComfyUI `input/` folder (upload/drag&drop saves f
 
 If dropping a `.heic` shows **"Unable to find workflow..."**, it means the frontend treated the file as a workflow drop.
 This extension intercepts `.heic/.heif` drops and uploads them to `input/`. For best results, drop onto the node widget, or select the **Load Image (HEIC)** node first and then drop.
+# comfyui-loadheicimage
