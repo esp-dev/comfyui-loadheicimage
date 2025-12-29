@@ -1,17 +1,17 @@
 [project]
-name = ""
-description = ""
+name = "comfyui-loadheicimage"
+description = "ComfyUI custom node that loads images (including HEIC/HEIF) and provides browser-friendly previews."
 version = "1.0.0"
 license = "LICENSE"
 
 [project.urls]
-Repository = ""
+Repository = "https://github.com/esp-dev/comfyui-loadheicimage"
 #  Used by Comfy Registry https://registry.comfy.org
 
 [tool.comfy]
-PublisherId = ""
-DisplayName = "ComfyUI-AIT"
+PublisherId = "esp-dev"
+DisplayName = "ComfyUI Load HEIC Image"
 Icon = ""
-includes = [] 
+includes = ["__init__.py", "nodes.py", "web"]
 # "requires-comfyui" = ">=1.0.0"  # ComfyUI version compatibility
 
