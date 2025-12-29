@@ -7,6 +7,9 @@ import torch
 from PIL import Image, ImageOps, ImageSequence
 
 
+HEIC_EXTS = {".heic", ".heif"}
+
+
 def _register_preview_route_if_possible() -> None:
     """Register /heic_preview once the PromptServer is available."""
     try:
@@ -48,31 +51,44 @@ def _register_preview_route_if_possible() -> None:
 
 
 def _get_comfy_modules():
-    import folder_paths  # provided by ComfyUI
-    import node_helpers  # provided by ComfyUI
+    try:
+        import folder_paths  # provided by ComfyUI
+        import node_helpers  # provided by ComfyUI
+    except Exception as e:
+        raise RuntimeError(
+            "This node must run inside a ComfyUI environment (missing folder_paths/node_helpers)."
+        ) from e
 
     return folder_paths, node_helpers
 
 
-def _try_register_heif_opener() -> None:
-    """Register HEIF/HEIC opener for Pillow if pillow-heif is installed."""
+def _try_register_heif_opener() -> bool:
+    """Register HEIF/HEIC opener for Pillow. Returns True if available."""
     try:
         from pillow_heif import register_heif_opener  # type: ignore
 
         register_heif_opener()
+        return True
     except Exception:
-        # If dependency is missing, we will raise a clear error when loading.
-        return
+        return False
+
+
+def _is_heic_path(name: str) -> bool:
+    _, ext = os.path.splitext(str(name))
+    return ext.lower() in HEIC_EXTS
 
 
 def _list_heic_files_in_input_dir() -> list[str]:
     folder_paths, _ = _get_comfy_modules()
     input_dir = folder_paths.get_input_directory()
-    files = [
-        f
-        for f in os.listdir(input_dir)
-        if os.path.isfile(os.path.join(input_dir, f))
-    ]
+    try:
+        files = [
+            f
+            for f in os.listdir(input_dir)
+            if os.path.isfile(os.path.join(input_dir, f))
+        ]
+    except Exception:
+        return []
 
     allowed_ext = {".heic", ".heif"}
     out = []
@@ -88,11 +104,14 @@ def _list_image_files_in_input_dir() -> list[str]:
     """Return all supported image files (PNG, JPG, WEBP, HEIC/HEIF)."""
     folder_paths, _ = _get_comfy_modules()
     input_dir = folder_paths.get_input_directory()
-    files = [
-        f
-        for f in os.listdir(input_dir)
-        if os.path.isfile(os.path.join(input_dir, f))
-    ]
+    try:
+        files = [
+            f
+            for f in os.listdir(input_dir)
+            if os.path.isfile(os.path.join(input_dir, f))
+        ]
+    except Exception:
+        return []
 
     # Support all common image formats + HEIC
     allowed_ext = {".png", ".jpg", ".jpeg", ".webp", ".heic", ".heif", ".bmp", ".gif"}
@@ -122,21 +141,29 @@ class LoadImagePlusHEIC:
     FUNCTION = "load_image"
 
     def load_image(self, image):
-        _try_register_heif_opener()
+        if _is_heic_path(image) and not _try_register_heif_opener():
+            raise RuntimeError(
+                "HEIC/HEIF support is not available. Install dependency: pip install pillow-heif"
+            )
+        else:
+            _try_register_heif_opener()
 
         folder_paths, node_helpers = _get_comfy_modules()
+
+        if not folder_paths.exists_annotated_filepath(image):
+            raise FileNotFoundError(f"Image not found in input path: {image}")
 
         image_path = folder_paths.get_annotated_filepath(image)
 
         try:
             img = node_helpers.pillow(Image.open, image_path)
         except Exception as e:
-            # Make missing pillow-heif obvious when attempting to open HEIC/HEIF.
-            # We keep the message minimal but actionable.
-            raise RuntimeError(
-                "Failed to open HEIC/HEIF image. Install dependency: pip install pillow-heif\n"
-                f"File: {image}\nError: {e}"
-            )
+            if _is_heic_path(image):
+                raise RuntimeError(
+                    "Failed to open HEIC/HEIF image. Ensure pillow-heif is installed: pip install pillow-heif\n"
+                    f"File: {image}\nError: {e}"
+                )
+            raise RuntimeError(f"Failed to open image: {image}\nError: {e}")
 
         output_images = []
         output_masks = []
@@ -175,6 +202,9 @@ class LoadImagePlusHEIC:
             output_images.append(image_t)
             output_masks.append(mask_t.unsqueeze(0))
 
+        if not output_images:
+            raise RuntimeError(f"No frames could be decoded from image: {image}")
+
         if len(output_images) > 1 and getattr(img, "format", None) not in excluded_formats:
             output_image = torch.cat(output_images, dim=0)
             output_mask = torch.cat(output_masks, dim=0)
@@ -190,7 +220,8 @@ class LoadImagePlusHEIC:
         image_path = folder_paths.get_annotated_filepath(image)
         m = hashlib.sha256()
         with open(image_path, "rb") as f:
-            m.update(f.read())
+            for chunk in iter(lambda: f.read(1024 * 1024), b""):
+                m.update(chunk)
         return m.digest().hex()
 
     @classmethod
