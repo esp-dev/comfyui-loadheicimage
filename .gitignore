@@ -30,3 +30,6 @@ output/
 input/
 temp/
 logs/
+
+# Local artifacts
+node.zip
