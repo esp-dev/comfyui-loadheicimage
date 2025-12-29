@@ -21,8 +21,8 @@ Repository = "https://github.com/esp-dev/comfyui-loadheicimage"
 
 [tool.comfy]
 PublisherId = "szymonj"
-DisplayName = "comfyui-loadheicimage"
-Icon = ""
+DisplayName = "Load HEIC Image"
+Icon = "https://raw.githubusercontent.com/esp-dev/comfyui-loadheicimage/main/icon-256.png"
 includes = ["__init__.py", "nodes.py", "web"]
 # "requires-comfyui" = ">=1.0.0"  # ComfyUI version compatibility
 
