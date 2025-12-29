@@ -31,3 +31,7 @@ This extension intercepts `.heic/.heif` drops and uploads them to `input/`. For 
 - The **"Choose file to upload"** (system file picker) is filtered to standard image extensions.
 - Even if you manually pick a `.heic` (e.g. by switching the filter to *All files*), ComfyUI currently does not upload the HEIC file via that path.
 - **Workaround:** upload HEIC/HEIF via **drag & drop**.
+
+## License
+
+MIT — see [LICENSE.txt](LICENSE.txt).
