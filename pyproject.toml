@@ -3,7 +3,7 @@ name = "comfyui-loadheicimage"
 description = "ComfyUI custom node that loads images (including HEIC/HEIF) and provides browser-friendly previews."
 version = "1.0.0"
 requires-python = ">=3.10"
-license = { file = "LICENSE" }
+license = { file = "LICENSE.txt" }
 
 # Registry/Manager may also read requirements.txt, but keeping this explicit helps tooling.
 dependencies = [
@@ -21,7 +21,7 @@ Repository = "https://github.com/esp-dev/comfyui-loadheicimage"
 
 [tool.comfy]
 PublisherId = "szymonj"
-DisplayName = "Load HEIC Image"
+DisplayName = "comfyui-loadheicimage"
 Icon = ""
 includes = ["__init__.py", "nodes.py", "web"]
 # "requires-comfyui" = ">=1.0.0"  # ComfyUI version compatibility
